@@ -1,49 +1,22 @@
 import csv
-import hashlib
+import os
+import importlib
 
-TABLE_SIZE = 10000000
-
-# ----------------------------
-# Hash functions
-# ----------------------------
-def djb2(s):
-    h = 5381
-    for ch in s:
-        h = ((h << 5) + h) + ord(ch)   # h * 33 + ord(ch)
-    return h & 0xFFFFFFFFFFFFFFFF
+TABLE_SIZE = 1_000_000
+FOLDER = "hash_functions"
 
 
-def sdbm(s):
-    h = 0
-    for ch in s:
-        h = ord(ch) + (h << 6) + (h << 16) - h
-    return h & 0xFFFFFFFFFFFFFFFF
+hash_functions = {}
 
+for filename in os.listdir(FOLDER):
+    if filename.endswith(".py") and filename != "__init__.py":
+        module_name = filename[:-3]
+        module = importlib.import_module(f"{FOLDER}.{module_name}")
 
-def fnv1a(s):
-    h = 14695981039346656037
-    fnv_prime = 1099511628211
-    for ch in s:
-        h ^= ord(ch)
-        h *= fnv_prime
-    return h & 0xFFFFFFFFFFFFFFFF
-
-
-def sha256_hash(s):
-    return int(hashlib.sha256(s.encode("utf-8")).hexdigest(), 16)
-
-
-def md5_hash(s):
-    return int(hashlib.md5(s.encode("utf-8")).hexdigest(), 16)
-
-
-hash_functions = {
-    "DJB2": djb2,
-    "SDBM": sdbm,
-    "FNV-1a": fnv1a,
-    "SHA-256": sha256_hash,
-    "MD5": md5_hash,
-}
+        if hasattr(module, "hash_string"):
+            hash_functions[module_name] = module.hash_string
+        else:
+            print(f"Warning: {filename} does not contain hash_string(s)")
 
 # ----------------------------
 # Read all words once
@@ -88,18 +61,18 @@ for name, func in hash_functions.items():
 # ----------------------------
 headers = ["Algorithm", "Words", "Used Buckets", "Collisions", "Max Bucket Size", "Load Factor"]
 
-# compute column widths
-col_widths = {}
-for h in headers:
-    col_widths[h] = max(len(h), max(len(str(row[h])) for row in results))
+if results:
+    col_widths = {}
+    for h in headers:
+        col_widths[h] = max(len(h), max(len(str(row[h])) for row in results))
 
-# print header
-header_line = " | ".join(f"{h:<{col_widths[h]}}" for h in headers)
-separator = "-+-".join("-" * col_widths[h] for h in headers)
+    header_line = " | ".join(f"{h:<{col_widths[h]}}" for h in headers)
+    separator = "-+-".join("-" * col_widths[h] for h in headers)
 
-print(header_line)
-print(separator)
+    print(header_line)
+    print(separator)
 
-# print rows
-for row in results:
-    print(" | ".join(f"{str(row[h]):<{col_widths[h]}}" for h in headers))
+    for row in results:
+        print(" | ".join(f"{str(row[h]):<{col_widths[h]}}" for h in headers))
+else:
+    print("No hash functions were loaded.")
