@@ -16,13 +16,14 @@ The program automatically loads every hash function from the `hash_functions` fo
   
 
 
+```text
 project/
 |
 +-- data/
 |   +-- unigram_freq.csv
 |
 +-- hash_functions/
-|   +-- **init**.py
+|   +-- __init__.py
 |   +-- hash_function_1.py
 |   +-- hash_function_2.py
 |   +-- ...
@@ -30,6 +31,8 @@ project/
 +-- main.py
 +-- hash_results_2000000.png
 +-- README.md
+```
+
 
   
   
