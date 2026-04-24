@@ -3,7 +3,7 @@ import os
 import importlib
 import matplotlib.pyplot as plt
 
-TABLE_SIZE = 2_000_000
+TABLE_SIZE = 1_000_000
 FOLDER = "hash_functions"
 
 hash_functions = {}
