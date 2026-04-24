@@ -1,8 +1,9 @@
 import csv
 import os
 import importlib
+import matplotlib.pyplot as plt
 
-TABLE_SIZE = 400_000
+TABLE_SIZE = 2_000_000
 FOLDER = "hash_functions"
 
 hash_functions = {}
@@ -15,7 +16,7 @@ for filename in os.listdir(FOLDER):
         if hasattr(module, "hash_string"):
             hash_functions[module_name] = module.hash_string
         else:
-            print(f"Warning: {filename} does not contain hash_string(s)")
+            print(f"Warning: {filename} does not contain hash_string")
 
 # ----------------------------
 # Read all words once
@@ -45,7 +46,7 @@ for name, func in hash_functions.items():
     num_words = sum(bucket_counts)
     used_buckets = sum(1 for x in bucket_counts if x > 0)
     collisions = sum(x - 1 for x in bucket_counts if x > 1)
-    max_bucket_size = max(bucket_counts)
+    max_bucket_count = max(bucket_counts)
     sparsity = 1 - (used_buckets / TABLE_SIZE)
 
     results.append({
@@ -53,29 +54,44 @@ for name, func in hash_functions.items():
         "Words": num_words,
         "Used Buckets": used_buckets,
         "Collisions": collisions,
-        "Max Bucket Size": max_bucket_size,
+        "Count": max_bucket_count,
         "Sparsity": round(sparsity, 4),
     })
 
-results.sort(key=lambda row: row["Collisions"], reverse=False)
+results.sort(key=lambda row: row["Collisions"])
 
 # ----------------------------
-# Print as table
+# Save as PNG table
 # ----------------------------
-headers = ["Algorithm", "Words", "Used Buckets", "Collisions", "Max Bucket Size", "Sparsity"]
+headers = ["Algorithm", "Words", "Used Buckets", "Collisions", "Count", "Sparsity"]
 
 if results:
-    col_widths = {}
-    for h in headers:
-        col_widths[h] = max(len(h), max(len(str(row[h])) for row in results))
+    table_data = [[row[h] for h in headers] for row in results]
 
-    header_line = " | ".join(f"{h:<{col_widths[h]}}" for h in headers)
-    separator = "-+-".join("-" * col_widths[h] for h in headers)
+    fig_height = max(2, 0.5 * len(table_data) + 1.5)
+    fig, ax = plt.subplots(figsize=(14, fig_height))
+    ax.axis("off")
 
-    print(header_line)
-    print(separator)
+    table = ax.table(
+        cellText=table_data,
+        colLabels=headers,
+        loc="center",
+        cellLoc="center",
+    )
 
-    for row in results:
-        print(" | ".join(f"{str(row[h]):<{col_widths[h]}}" for h in headers))
+    table.auto_set_font_size(False)
+    table.set_fontsize(16)
+    table.scale(1, 2.0)
+
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold")
+
+    output_file = f"hash_results_{TABLE_SIZE}.png"
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=200, bbox_inches="tight")
+    plt.close()
+
+    print(f"Saved table figure to {output_file}")
 else:
     print("No hash functions were loaded.")
